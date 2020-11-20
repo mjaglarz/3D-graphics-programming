@@ -10,6 +10,10 @@
 
 
 #include "Application/utils.h"
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 void SimpleShapeApplication::init() {
 
@@ -66,14 +70,14 @@ void SimpleShapeApplication::init() {
     float light_intensity = 0.7f;
     float light_color[3] = {0.7f, 0.3f, 0.7f};
 
-    GLuint ubo_handle(0u);
-    glGenBuffers(1, &ubo_handle);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle);
+    GLuint ubo_handle[2];
+    glGenBuffers(2, &ubo_handle[0]);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle[0]);
     glBufferData(GL_UNIFORM_BUFFER, 8 * sizeof(float), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &light_intensity);
     glBufferSubData(GL_UNIFORM_BUFFER, 4 * sizeof(float), 3 * sizeof(float), light_color);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_handle);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_handle[0]);
 
     auto u_modifiers_index = glGetUniformBlockIndex(program, "Modifiers");
     if (u_modifiers_index == GL_INVALID_INDEX) {
@@ -89,6 +93,29 @@ void SimpleShapeApplication::init() {
 
     glEnable(GL_DEPTH_TEST);
     glUseProgram(program);
+
+    glm::vec3 eye = glm::vec3(0.0f, 1.0f, 1.0f);
+    glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
+    glm::vec3 up = glm::vec3(0.0f, -1.0f, 0.0f);
+
+    glm::mat4 P = glm::perspective(glm::half_pi<float>(), (float)w/h, 0.1f, 100.0f);
+    glm::mat4 V = glm::lookAt(eye, center, up);
+    glm::mat4 M(1.0f);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle[1]);
+    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &P[0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), &V[0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(glm::mat4), &M[0]);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo_handle[1]);
+
+    auto u_transformations_index = glGetUniformBlockIndex(program, "Transformations");
+    if (u_transformations_index == GL_INVALID_INDEX) {
+        std::cout << "Cannot find Transformations uniform block in program" << std::endl;
+    } else {
+        glUniformBlockBinding(program, u_transformations_index, 1);
+    }
 }
 
 void SimpleShapeApplication::frame() {
