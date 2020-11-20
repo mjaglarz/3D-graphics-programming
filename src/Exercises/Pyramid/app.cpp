@@ -25,14 +25,31 @@ void SimpleShapeApplication::init() {
     }
 
     std::vector<GLfloat> vertices = {
-            -0.6f,  0.3f, 0.0f, 1.0f, 0.0f, 0.0f,
-             0.0f,  0.9f, 0.0f, 1.0f, 0.0f, 0.0f,
-             0.6f,  0.3f, 0.0f, 1.0f, 0.0f, 0.0f,
+            //Front of the pyramid
+            0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+            0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
+            -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
 
-             0.4f,  0.3f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.4f, -0.3f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.4f,  0.3f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.4f, -0.3f, 0.0f, 0.0f, 0.0f, 1.0f
+            //Right side of the pyramid
+            0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+            0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
+            0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
+
+            //Left side of the pyramid
+            0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
+
+            //Back of the pyramid
+            0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f,
+
+            //Bottom of the pyramid
+            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
+            0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 1.0f
     };
 
     GLuint v_buffer_handle;
@@ -44,7 +61,10 @@ void SimpleShapeApplication::init() {
     std::vector<GLushort> indices = {
             0, 1, 2,
             3, 4, 5,
-            4, 6, 5
+            6, 7, 8,
+            9, 10, 11,
+            12, 13, 14,
+            13, 14, 15
     };
 
     GLuint idx_buffer_handle;
@@ -91,9 +111,9 @@ void SimpleShapeApplication::init() {
     glEnable(GL_DEPTH_TEST);
     glUseProgram(program);
 
-    glm::vec3 eye = glm::vec3(0.0f, 1.0f, 1.0f);
-    glm::vec3 center = glm::vec3(0.0f, 0.5f, 0.0f);
-    glm::vec3 up = glm::vec3(0.0f, -1.0f, 0.0f);
+    glm::vec3 eye = glm::vec3(0.5f, 0.3f, 1.0f);
+    glm::vec3 center = glm::vec3(0.0f, -0.3f, 0.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     glm::mat4 P = glm::perspective(glm::half_pi<float>(), (float)w/h, 0.1f, 100.0f);
     glm::mat4 V = glm::lookAt(eye, center, up);
@@ -117,7 +137,8 @@ void SimpleShapeApplication::init() {
 
 void SimpleShapeApplication::frame() {
     glBindVertexArray(vao_);
-    glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_SHORT, reinterpret_cast<GLvoid *>(0));
+    glEnable(GL_DEPTH_TEST);
+    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_SHORT, reinterpret_cast<GLvoid *>(0));
 
     glBindVertexArray(0);
 }
