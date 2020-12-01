@@ -87,14 +87,14 @@ void SimpleShapeApplication::init() {
     float light_intensity = 0.7f;
     float light_color[3] = {0.7f, 0.3f, 0.7f};
 
-    GLuint ubo_handle[2];
-    glGenBuffers(2, &ubo_handle[0]);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle[0]);
+    GLuint ubo_handle(0u);
+    glGenBuffers(1, &ubo_handle);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle);
     glBufferData(GL_UNIFORM_BUFFER, 8 * sizeof(float), nullptr, GL_STATIC_DRAW);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &light_intensity);
     glBufferSubData(GL_UNIFORM_BUFFER, 4 * sizeof(float), 3 * sizeof(float), light_color);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_handle[0]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_handle);
 
     auto u_modifiers_index = glGetUniformBlockIndex(program, "Modifiers");
     if (u_modifiers_index == GL_INVALID_INDEX) {
@@ -111,21 +111,22 @@ void SimpleShapeApplication::init() {
     glEnable(GL_DEPTH_TEST);
     glUseProgram(program);
 
-    glm::vec3 eye = glm::vec3(0.5f, 0.3f, 1.0f);
+    glm::vec3 eye = glm::vec3(0.5f, 1.2f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, -0.3f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    glm::mat4 P = glm::perspective(glm::half_pi<float>(), (float)w/h, 0.1f, 100.0f);
-    glm::mat4 V = glm::lookAt(eye, center, up);
-    glm::mat4 M(1.0f);
+    fov_ = glm::pi<float>()/4.0;
+    aspect_ = (float)w/h;
+    near_ = 0.1f;
+    far_ = 100.0f;
 
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle[1]);
-    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &P[0]);
-    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), &V[0]);
-    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(glm::mat4), &M[0]);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo_handle[1]);
+    P_ = glm::perspective(fov_, aspect_, near_, far_);
+    V_ = glm::lookAt(eye, center, up);
+
+    glGenBuffers(1, &u_pvm_buffer_);
+    glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, u_pvm_buffer_);
 
     auto u_transformations_index = glGetUniformBlockIndex(program, "Transformations");
     if (u_transformations_index == GL_INVALID_INDEX) {
@@ -140,9 +141,21 @@ void SimpleShapeApplication::init() {
 }
 
 void SimpleShapeApplication::frame() {
+    glm::mat4 PVM = P_ * V_;
+    glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &PVM[0]);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
     glBindVertexArray(vao_);
     glEnable(GL_DEPTH_TEST);
     glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_SHORT, reinterpret_cast<GLvoid *>(0));
 
     glBindVertexArray(0);
+}
+
+void SimpleShapeApplication::framebuffer_resize_callback(int w, int h) {
+    Application::framebuffer_resize_callback(w, h);
+    glViewport(0, 0, w, h);
+    aspect_ = (float)w/h;
+    P_ = glm::perspective(fov_, aspect_, near_, far_);
 }
