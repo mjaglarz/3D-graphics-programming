@@ -111,17 +111,19 @@ void SimpleShapeApplication::init() {
     glEnable(GL_DEPTH_TEST);
     glUseProgram(program);
 
+    set_camera(new Camera);
+
     glm::vec3 eye = glm::vec3(0.5f, 1.2f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, -0.3f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    fov_ = glm::pi<float>()/4.0;
-    aspect_ = (float)w/h;
-    near_ = 0.1f;
-    far_ = 100.0f;
+    float fov = glm::pi<float>()/4.0;
+    float aspect = (float)w/h;
+    float near = 0.1f;
+    float far = 100.0f;
 
-    P_ = glm::perspective(fov_, aspect_, near_, far_);
-    V_ = glm::lookAt(eye, center, up);
+    camera()->perspective(fov, aspect, near, far);
+    camera()->look_at(eye, center, up);
 
     glGenBuffers(1, &u_pvm_buffer_);
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
@@ -141,7 +143,7 @@ void SimpleShapeApplication::init() {
 }
 
 void SimpleShapeApplication::frame() {
-    glm::mat4 PVM = P_ * V_;
+    glm::mat4 PVM = camera()->projection() * camera()->view();
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &PVM[0]);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -156,6 +158,6 @@ void SimpleShapeApplication::frame() {
 void SimpleShapeApplication::framebuffer_resize_callback(int w, int h) {
     Application::framebuffer_resize_callback(w, h);
     glViewport(0, 0, w, h);
-    aspect_ = (float)w/h;
-    P_ = glm::perspective(fov_, aspect_, near_, far_);
+    float aspect = (float)w/h;
+    camera()->set_aspect(aspect);
 }

@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
         app.h
         app.cpp
         $<TARGET_OBJECTS:glad>
+        camera.h
         )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC )
