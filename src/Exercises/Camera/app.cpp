@@ -112,6 +112,7 @@ void SimpleShapeApplication::init() {
     glUseProgram(program);
 
     set_camera(new Camera);
+    set_controler(new CameraControler(camera()));
 
     glm::vec3 eye = glm::vec3(0.5f, 1.2f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, -0.3f, 0.0f);
@@ -160,4 +161,32 @@ void SimpleShapeApplication::framebuffer_resize_callback(int w, int h) {
     glViewport(0, 0, w, h);
     float aspect = (float)w/h;
     camera()->set_aspect(aspect);
+}
+
+void SimpleShapeApplication::mouse_button_callback(int button, int action, int mods) {
+    Application::mouse_button_callback(button, action, mods);
+
+    if (controler_) {
+        double x, y;
+        glfwGetCursorPos(window_, &x, &y);
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+            controler_->LMB_pressed(x, y);
+
+        if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+            controler_->LMB_released(x, y);
+    }
+
+}
+
+void SimpleShapeApplication::cursor_position_callback(double x, double y) {
+    Application::cursor_position_callback(x, y);
+    if (controler_) {
+        controler_->mouse_moved(x, y);
+    }
+}
+
+void SimpleShapeApplication::scroll_callback(double xoffset, double yoffset) {
+    Application::scroll_callback(xoffset, yoffset);
+    camera()->zoom(yoffset / 30.0f);
 }
