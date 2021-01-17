@@ -38,7 +38,7 @@ void SimpleShapeApplication::init() {
     pyramid_ = std::make_shared<Pyramid>();
     rotation_period = 4.0;
 
-    glm::vec3 eye = glm::vec3(-0.5f, 15.0f, 1.0f);
+    glm::vec3 eye = glm::vec3(-0.5f, 12.0f, 1.0f);
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -73,13 +73,13 @@ void SimpleShapeApplication::frame() {
     auto now = std::chrono::steady_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::duration<float>>(now - start_).count();
 
-    float a = 20.0f;
+    float a = 10.0f;
     float b = 8.0f;
     float orbital_rotation_period = 20.0f;
     float orbital_rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / orbital_rotation_period;
     float x = a * cos(orbital_rotation_angle);
     float z = b * sin(orbital_rotation_angle);
-    auto O = glm::translate(glm::mat4(1.0f), glm::vec3{x, 0.0, z});
+    auto O = glm::translate(glm::mat4(1.0f), glm::vec3{x, 0.0f, z});
     auto rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / rotation_period;
     auto axis = glm::vec3(0.0f, 1.0f, 0.0f);
     auto R = glm::rotate(glm::mat4(1.0f), rotation_angle, axis);
@@ -89,6 +89,40 @@ void SimpleShapeApplication::frame() {
 
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &PVM[0]);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    pyramid_->draw();
+
+    float moon_rotation_period = 10.0f;
+    float moon_rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / moon_rotation_period;
+    float moon_x = 3.0f * cos(moon_rotation_angle);
+    float moon_z = 3.0f * sin(moon_rotation_angle);
+    auto moon_O = glm::translate(glm::mat4(1.0f), glm::vec3{moon_x, 0.0f, moon_z});
+    auto moon_R = glm::rotate(glm::mat4(1.0f), moon_rotation_angle, axis);
+    auto moon_S = glm::scale(glm::mat4(1.0f), glm::vec3{0.5f, 0.5f, 0.5f});
+    auto moon_M = moon_O * moon_R * moon_S;
+
+    glm::mat4 moon_PVM = camera()->projection() * camera()->view() * M * moon_M;
+
+    glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &moon_PVM[0]);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    pyramid_->draw();
+
+    float satellite_rotation_period = 2.0f;
+    float satellite_rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / satellite_rotation_period;
+    float satellite_x = 1.5 * cos(satellite_rotation_angle);
+    float satellite_y = 1.5 * sin(satellite_rotation_angle);
+    auto satellite_O = glm::translate(glm::mat4(1.0f), glm::vec3{satellite_x, satellite_y, 0.0f});
+    auto satellite_R = glm::rotate(glm::mat4(1.0f), satellite_rotation_angle, axis);
+    auto satellite_S = glm::scale(glm::mat4(1.0f), glm::vec3{0.25f, 0.25f, 0.25f});
+    auto satellite_M = satellite_O * satellite_R * satellite_S;
+
+    glm::mat4 satellite_PVM = camera()->projection() * camera()->view() * M * satellite_M;
+
+    glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &satellite_PVM[0]);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
     pyramid_->draw();
