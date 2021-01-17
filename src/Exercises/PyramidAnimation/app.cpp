@@ -24,85 +24,6 @@ void SimpleShapeApplication::init() {
         std::cerr << std::string(PROJECT_DIR) + "/shaders/base_fs.glsl" << " shader files" << std::endl;
     }
 
-    std::vector<GLfloat> vertices = {
-            //Front of the pyramid
-            0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
-            0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-            -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-
-            //Right side of the pyramid
-            0.0f, 0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-
-            //Left side of the pyramid
-            0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f, 0.0f, 0.0f, 1.0f,
-
-            //Back of the pyramid
-            0.0f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
-            0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f,
-            -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 1.0f,
-
-            //Bottom of the pyramid
-            -0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-            0.5f, -0.5f, -0.5f, 1.0f, 1.0f, 1.0f,
-            -0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 1.0f,
-            0.5f, -0.5f, 0.5f, 1.0f, 1.0f, 1.0f
-    };
-
-    GLuint v_buffer_handle;
-    glGenBuffers(1, &v_buffer_handle);
-    glBindBuffer(GL_ARRAY_BUFFER, v_buffer_handle);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    std::vector<GLushort> indices = {
-            2, 1, 0,
-            3, 4, 5,
-            8, 7, 6,
-            9, 10, 11,
-            12, 13, 14,
-            15, 14, 13
-    };
-
-    GLuint idx_buffer_handle;
-    glGenBuffers(1, &idx_buffer_handle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buffer_handle);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLushort), indices.data(), GL_STATIC_DRAW);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    glGenVertexArrays(1, &vao_);
-    glBindVertexArray(vao_);
-    glBindBuffer(GL_ARRAY_BUFFER, v_buffer_handle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx_buffer_handle);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<GLvoid *>(0));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), reinterpret_cast<GLvoid *>(3*sizeof(GLfloat)));
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    float light_intensity = 0.7f;
-    float light_color[3] = {0.7f, 0.3f, 0.7f};
-
-    GLuint ubo_handle(0u);
-    glGenBuffers(1, &ubo_handle);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle);
-    glBufferData(GL_UNIFORM_BUFFER, 8 * sizeof(float), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &light_intensity);
-    glBufferSubData(GL_UNIFORM_BUFFER, 4 * sizeof(float), 3 * sizeof(float), light_color);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_handle);
-
-    auto u_modifiers_index = glGetUniformBlockIndex(program, "Modifiers");
-    if (u_modifiers_index == GL_INVALID_INDEX) {
-        std::cout << "Cannot find Modifiers uniform block in program" << std::endl;
-    } else {
-        glUniformBlockBinding(program, u_modifiers_index, 0);
-    }
-
     glClearColor(0.81f, 0.81f, 0.8f, 1.0f);
     int w, h;
     std::tie(w, h) = frame_buffer_size();
@@ -114,11 +35,14 @@ void SimpleShapeApplication::init() {
     set_camera(new Camera);
     set_controler(new CameraControler(camera()));
 
-    glm::vec3 eye = glm::vec3(0.5f, 1.2f, 1.0f);
-    glm::vec3 center = glm::vec3(0.0f, -0.3f, 0.0f);
+    pyramid_ = std::make_shared<Pyramid>();
+    rotation_period = 4.0;
+
+    glm::vec3 eye = glm::vec3(-0.5f, 15.0f, 1.0f);
+    glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    float fov = glm::pi<float>()/4.0;
+    float fov = glm::pi<float>()/2.0;
     float aspect = (float)w/h;
     float near = 0.1f;
     float far = 100.0f;
@@ -141,19 +65,33 @@ void SimpleShapeApplication::init() {
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
+
+    start_ = std::chrono::steady_clock::now();
 }
 
 void SimpleShapeApplication::frame() {
-    glm::mat4 PVM = camera()->projection() * camera()->view();
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed_time = std::chrono::duration_cast<std::chrono::duration<float>>(now - start_).count();
+
+    float a = 20.0f;
+    float b = 8.0f;
+    float orbital_rotation_period = 20.0f;
+    float orbital_rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / orbital_rotation_period;
+    float x = a * cos(orbital_rotation_angle);
+    float z = b * sin(orbital_rotation_angle);
+    auto O = glm::translate(glm::mat4(1.0f), glm::vec3{x, 0.0, z});
+    auto rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / rotation_period;
+    auto axis = glm::vec3(0.0f, 1.0f, 0.0f);
+    auto R = glm::rotate(glm::mat4(1.0f), rotation_angle, axis);
+    auto M = O * R;
+
+    glm::mat4 PVM = camera()->projection() * camera()->view() * M;
+
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &PVM[0]);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    glBindVertexArray(vao_);
-    glEnable(GL_DEPTH_TEST);
-    glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_SHORT, reinterpret_cast<GLvoid *>(0));
-
-    glBindVertexArray(0);
+    pyramid_->draw();
 }
 
 void SimpleShapeApplication::framebuffer_resize_callback(int w, int h) {
@@ -176,7 +114,6 @@ void SimpleShapeApplication::mouse_button_callback(int button, int action, int m
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
             controler_->LMB_released(x, y);
     }
-
 }
 
 void SimpleShapeApplication::cursor_position_callback(double x, double y) {

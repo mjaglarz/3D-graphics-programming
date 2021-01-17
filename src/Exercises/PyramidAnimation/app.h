@@ -6,6 +6,7 @@
 #pragma once
 
 #include <vector>
+#include <chrono>
 #include <glm/mat4x4.hpp>
 
 #include "Application/application.h"
@@ -13,6 +14,7 @@
 #include "glad/glad.h"
 #include "camera.h"
 #include "camera_controler.h"
+#include "pyramid.h"
 
 class SimpleShapeApplication : public xe::Application {
 public:
@@ -32,6 +34,8 @@ public:
 
     void set_controler(CameraControler *controler) { controler_ = controler; }
 
+    std::shared_ptr<Pyramid> pyramid_;
+
     ~SimpleShapeApplication() {
         if (camera_) {
             delete camera_;
@@ -44,4 +48,7 @@ private:
 
     GLuint vao_;
     GLuint u_pvm_buffer_;
+
+    std::chrono::steady_clock::time_point start_;
+    float rotation_period;
 };
