@@ -17,4 +17,5 @@ public:
 private:
     GLuint vao_;
     GLuint buffer_[2];
+    GLuint diffuse_texture_;
 };

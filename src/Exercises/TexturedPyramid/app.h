@@ -13,6 +13,7 @@
 #include "glad/glad.h"
 #include "camera.h"
 #include "camera_controler.h"
+#include "pyramid.h"
 
 class SimpleShapeApplication : public xe::Application {
 public:
@@ -31,6 +32,8 @@ public:
     Camera *camera() { return camera_; }
 
     void set_controler(CameraControler *controler) { controler_ = controler; }
+
+    std::shared_ptr<Pyramid> pyramid_;
 
     ~SimpleShapeApplication() {
         if (camera_) {
