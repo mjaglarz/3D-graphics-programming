@@ -119,7 +119,7 @@ void SimpleShapeApplication::frame() {
     auto satellite_S = glm::scale(glm::mat4(1.0f), glm::vec3{0.25f, 0.25f, 0.25f});
     auto satellite_M = satellite_O * satellite_R * satellite_S;
 
-    glm::mat4 satellite_PVM = camera()->projection() * camera()->view() * M * satellite_M;
+    glm::mat4 satellite_PVM = camera()->projection() * camera()->view() * O * satellite_M;
 
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &satellite_PVM[0]);
