@@ -38,9 +38,9 @@ void SimpleShapeApplication::init() {
     pyramid_ = std::make_shared<Pyramid>();
     rotation_period = 4.0;
 
-    glm::vec3 eye = glm::vec3(-0.5f, 12.0f, 1.0f);
+    glm::vec3 eye = glm::vec3(0.0f, 12.0f, 0.0f);
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 1.0f);
 
     float fov = glm::pi<float>()/2.0;
     float aspect = (float)w/h;
@@ -113,13 +113,14 @@ void SimpleShapeApplication::frame() {
     float satellite_rotation_period = 2.0f;
     float satellite_rotation_angle = 2.0f * glm::pi<float>() * elapsed_time / satellite_rotation_period;
     float satellite_x = 1.5 * cos(satellite_rotation_angle);
-    float satellite_y = 1.5 * sin(satellite_rotation_angle);
-    auto satellite_O = glm::translate(glm::mat4(1.0f), glm::vec3{satellite_x, satellite_y, 0.0f});
+    float satellite_z = 1.5 * sin(satellite_rotation_angle);
+    auto satellite_O = glm::translate(glm::mat4(1.0f), glm::vec3{satellite_x, 0.0f, satellite_z});
     auto satellite_R = glm::rotate(glm::mat4(1.0f), satellite_rotation_angle, axis);
+    auto satellite_R2 = glm::rotate(glm::mat4(1.0f), glm::pi<float>() / 2.0f, glm::vec3{1.0f, 0.0f, 0.0f});
     auto satellite_S = glm::scale(glm::mat4(1.0f), glm::vec3{0.25f, 0.25f, 0.25f});
     auto satellite_M = satellite_O * satellite_R * satellite_S;
 
-    glm::mat4 satellite_PVM = camera()->projection() * camera()->view() * O * satellite_M;
+    glm::mat4 satellite_PVM = camera()->projection() * camera()->view() * O * satellite_R2 * satellite_M;
 
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &satellite_PVM[0]);
