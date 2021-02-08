@@ -5,7 +5,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "rotation.h"
-#include "pyramid.h"
+#include "quad.h"
 
 class Camera {
 public:

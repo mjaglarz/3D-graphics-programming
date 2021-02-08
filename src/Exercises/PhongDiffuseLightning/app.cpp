@@ -24,26 +24,7 @@ void SimpleShapeApplication::init() {
         std::cerr << std::string(PROJECT_DIR) + "/shaders/base_fs.glsl" << " shader files" << std::endl;
     }
 
-    pyramid_ = std::make_shared<Pyramid>();
-
-    float light_intensity = 0.7f;
-    float light_color[3] = {0.7f, 0.3f, 0.7f};
-
-    GLuint ubo_handle(0u);
-    glGenBuffers(1, &ubo_handle);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo_handle);
-    glBufferData(GL_UNIFORM_BUFFER, 8 * sizeof(float), nullptr, GL_STATIC_DRAW);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(float), &light_intensity);
-    glBufferSubData(GL_UNIFORM_BUFFER, 4 * sizeof(float), 3 * sizeof(float), light_color);
-    glBindBuffer(GL_UNIFORM_BUFFER, 0);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo_handle);
-
-    auto u_modifiers_index = glGetUniformBlockIndex(program, "Modifiers");
-    if (u_modifiers_index == GL_INVALID_INDEX) {
-        std::cout << "Cannot find Modifiers uniform block in program" << std::endl;
-    } else {
-        glUniformBlockBinding(program, u_modifiers_index, 0);
-    }
+    quad_ = new Quad();
 
     glClearColor(0.81f, 0.81f, 0.8f, 1.0f);
     int w, h;
@@ -56,8 +37,8 @@ void SimpleShapeApplication::init() {
     set_camera(new Camera);
     set_controler(new CameraControler(camera()));
 
-    glm::vec3 eye = glm::vec3(0.5f, 1.2f, 1.0f);
-    glm::vec3 center = glm::vec3(0.0f, -0.3f, 0.0f);
+    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
     float fov = glm::pi<float>()/4.0;
@@ -68,10 +49,19 @@ void SimpleShapeApplication::init() {
     camera()->perspective(fov, aspect, near, far);
     camera()->look_at(eye, center, up);
 
+    light_.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    light_.a = glm::vec4(1.0f, 0.0f, 1.0f, 0.0f);
+    light_.ambient = glm::vec4(0.2f, 0.2f, 0.2f, 0.2f);
+
     glGenBuffers(1, &u_pvm_buffer_);
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+    glBufferData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, u_pvm_buffer_);
+
+    glGenBuffers(1, &u_light_buffer_);
+    glBindBuffer(GL_UNIFORM_BUFFER, u_light_buffer_);
+    glBufferData(GL_UNIFORM_BUFFER, 4 * sizeof(glm::mat4), nullptr, GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 2, u_light_buffer_);
 
     auto u_transformations_index = glGetUniformBlockIndex(program, "Transformations");
     if (u_transformations_index == GL_INVALID_INDEX) {
@@ -87,18 +77,43 @@ void SimpleShapeApplication::init() {
         glUniform1ui(u_diffuse_map_location, 0);
     }
 
+    auto u_light_index = glGetUniformBlockIndex(program, "Light");
+    if (u_light_index == -1) {
+        std::cerr << "Cannot find uniform Light\n";
+    } else {
+        glUniformBlockBinding(program, u_light_index, 2);
+    }
+
     glEnable(GL_CULL_FACE);
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
 }
 
 void SimpleShapeApplication::frame() {
-    glm::mat4 PVM = camera()->projection() * camera()->view();
+    glm::mat4 P = camera()->projection();
+    glm::mat4 VM = camera()->view();
+
+    auto R = glm::mat3(VM);
+    auto N = glm::transpose(glm::inverse(R));
+
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
-    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &PVM[0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &P[0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), &VM[0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), sizeof(N[0]), &N[0]);
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4) + sizeof(N[0]), sizeof(N[1]), &N[1]);
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4) + sizeof(N[0]) + sizeof(N[1]), sizeof(N[2]), &N[2]);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    pyramid_->draw();
+    light_.position = camera_->view() * glm::vec4(-0.9f, 0.0f, 1.0f, 1.0f);
+
+    glBindBuffer(GL_UNIFORM_BUFFER, u_light_buffer_);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4), &light_.position);
+    glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::vec4), sizeof(glm::vec4), &light_.color);
+    glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::vec4), sizeof(glm::vec4), &light_.a);
+    glBufferSubData(GL_UNIFORM_BUFFER, 3 * sizeof(glm::vec4), sizeof(glm::vec4), &light_.ambient);
+    glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+    quad_->draw();
 }
 
 void SimpleShapeApplication::framebuffer_resize_callback(int w, int h) {
@@ -134,4 +149,8 @@ void SimpleShapeApplication::cursor_position_callback(double x, double y) {
 void SimpleShapeApplication::scroll_callback(double xoffset, double yoffset) {
     Application::scroll_callback(xoffset, yoffset);
     camera()->zoom(yoffset / 30.0f);
+}
+
+void SimpleShapeApplication::cleanup() {
+    delete quad_;
 }

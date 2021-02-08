@@ -13,8 +13,8 @@ add_executable(${PROJECT_NAME}
         camera.h
         rotation.h
         camera_controler.h
-        pyramid.h
-        pyramid.cpp
+        quad.h
+        quad.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} PUBLIC )
