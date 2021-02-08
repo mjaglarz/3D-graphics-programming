@@ -98,7 +98,7 @@ void SimpleShapeApplication::frame() {
     float moon_x = 3.0f * cos(moon_rotation_angle);
     float moon_z = 3.0f * sin(moon_rotation_angle);
     auto moon_O = glm::translate(glm::mat4(1.0f), glm::vec3{moon_x, 0.0f, moon_z});
-    auto moon_R = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), axis);
+    auto moon_R = glm::rotate(glm::mat4(1.0f), -moon_rotation_angle, axis);
     auto moon_S = glm::scale(glm::mat4(1.0f), glm::vec3{0.5f, 0.5f, 0.5f});
     auto moon_M = moon_O * moon_R * moon_S;
 
