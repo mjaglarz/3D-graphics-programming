@@ -37,7 +37,7 @@ void SimpleShapeApplication::init() {
     set_camera(new Camera);
     set_controler(new CameraControler(camera()));
 
-    glm::vec3 eye = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 eye = glm::vec3(-1.0f, 0.3f, -4.0f);
     glm::vec3 center = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -51,7 +51,7 @@ void SimpleShapeApplication::init() {
 
     light_.color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
     light_.a = glm::vec4(1.0f, 0.0f, 1.0f, 0.0f);
-    light_.ambient = glm::vec4(0.2f, 0.2f, 0.2f, 0.2f);
+    light_.ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
 
     glGenBuffers(1, &u_pvm_buffer_);
     glBindBuffer(GL_UNIFORM_BUFFER, u_pvm_buffer_);
@@ -83,10 +83,6 @@ void SimpleShapeApplication::init() {
     } else {
         glUniformBlockBinding(program, u_light_index, 2);
     }
-
-    glEnable(GL_CULL_FACE);
-    glFrontFace(GL_CCW);
-    glCullFace(GL_BACK);
 }
 
 void SimpleShapeApplication::frame() {
@@ -104,7 +100,7 @@ void SimpleShapeApplication::frame() {
     glBufferSubData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4) + sizeof(N[0]) + sizeof(N[1]), sizeof(N[2]), &N[2]);
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-    light_.position = camera_->view() * glm::vec4(-0.9f, 0.0f, 1.0f, 1.0f);
+    light_.position = camera_->view() * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
     glBindBuffer(GL_UNIFORM_BUFFER, u_light_buffer_);
     glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::vec4), &light_.position);
